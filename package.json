@@ -6,12 +6,22 @@
     "name": "Dementyev Alexey",
     "email": "alexey.dementyev@gmail.com"
   },
+  "description": "Redis backed data caching with partial find / update",
+  "keywords": [
+    "redis",
+    "cache",
+    "partial",
+    "query",
+    "querying"
+  ],
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@types/node": "^11.9.5"
+  },
   "devDependencies": {
-    "@types/ioredis": "^4.0.8",
     "ioredis": "^4.6.2",
-    "typescript": "3.0.3",
-    "ts-node": "^8.0.2"
+    "mingo": "^2.2.11",
+    "ts-node": "^8.0.2",
+    "typescript": "3.0.3"
   }
 }
