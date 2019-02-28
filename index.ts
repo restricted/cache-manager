@@ -147,7 +147,7 @@ export class RedisDataCache {
         if (this.debug) {
             console.info('STATE Redis disconnect.');
         }
-        this.redis.disconnect();
+        return this.redis.disconnect();
     }
 
     /**
@@ -336,7 +336,8 @@ export class RedisDataCache {
     }
 
     async connect() {
-        if (['connecting', 'connected', 'ready'].indexOf(this.status()) === -1) {
+        console.log(this.status());
+        if (['connect', 'connecting', 'connected', 'ready'].indexOf(this.status()) === -1) {
             return await this.redis.connect();
         } else {
             return Promise.resolve();
