@@ -336,7 +336,6 @@ export class RedisDataCache {
     }
 
     async connect() {
-        console.log(this.status());
         if (['connect', 'connecting', 'connected', 'ready'].indexOf(this.status()) === -1) {
             return await this.redis.connect();
         } else {
