@@ -1,0 +1,17 @@
+{
+  "name": "redis-data-cache",
+  "version": "0.0.1",
+  "repository": "https://github.com/restricted/redis-data-cache",
+  "author": {
+    "name": "Dementyev Alexey",
+    "email": "alexey.dementyev@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/ioredis": "^4.0.8",
+    "ioredis": "^4.6.2",
+    "typescript": "3.0.3",
+    "ts-node": "^8.0.2"
+  }
+}
