@@ -10,7 +10,7 @@ export interface Type<T> extends Function {
 /**
  * @class RedisDataCache
  * @description Redis backed data caching with partial find / update.
- * @version 0.0.1
+ * @version 0.0.2
  */
 export class RedisDataCache {
 
