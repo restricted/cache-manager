@@ -68,23 +68,6 @@ export class RedisDataCache {
     }
 
     /**
-     * Create Redis instance
-     */
-    private createRedisInstance() {
-        if (this.url) {
-            this.redis = new Ioredis(this.url);
-        } else {
-            this.redis = new Ioredis({
-                host: this.hostname,
-                port: this.port,
-                password: this.password,
-                keyPrefix: this.prefix,
-                ready: true
-            });
-        }
-    }
-
-    /**
      * Set field name for id dynamically
      * @param name
      */
@@ -99,15 +82,6 @@ export class RedisDataCache {
     setPrefix(prefix: string) {
         this.prefix = prefix;
         this.createRedisInstance();
-    }
-
-    /**
-     * Add listener for Redis events
-     * @param event
-     * @param listener
-     */
-    private addListener(event: string, listener: () => void) {
-        this.redis.on(event, listener);
     }
 
     /**
@@ -250,21 +224,6 @@ export class RedisDataCache {
     }
 
     /**
-     * Filter object properties by provided fields
-     * @param obj
-     * @param fields
-     */
-    private filterObject<T>(obj, fields): T {
-        const t: T = <T>{};
-        Object.keys(obj).map(k => {
-            if (fields.indexOf(k) > -1) {
-                t[k] = obj[k];
-            }
-        });
-        return t;
-    }
-
-    /**
      * Async / await find many by ids
      * @param type
      * @param ids
@@ -376,6 +335,18 @@ export class RedisDataCache {
         return this.create(Object.assign(find, data));
     }
 
+    async connect() {
+        if (['connecting', 'connected', 'ready'].indexOf(this.status()) === -1) {
+            return await this.redis.connect();
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    status() {
+        return this.redis.status;
+    }
+
     /**
      * Delete object from Redis
      * @param type
@@ -387,6 +358,73 @@ export class RedisDataCache {
         }
 
         return this.redis.del(type.name + '_' + id);
+    }
+
+    async exists<T>(type: Type<T>, id: string | number) {
+        if (this.debug) {
+            console.info('STATE exists: ' + type.name + ' id: ' + id);
+        }
+
+        return this.redis.exists(type.name + '_' + id);
+    }
+
+    /**
+     * Clear keys with current prefix
+     */
+    async clear() {
+        try {
+            const keys = await this.redis.keys(this.prefix + '*');
+            if (keys.length === 0) {
+                return Promise.resolve(null);
+            } else {
+                return Promise.all(await keys.map(async key => {
+                    return this.redis.del(key.substr(this.prefix.length));
+                }));
+            }
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    /**
+     * Create Redis instance
+     */
+    private createRedisInstance() {
+        if (this.url) {
+            this.redis = new Ioredis(this.url);
+        } else {
+            this.redis = new Ioredis({
+                host: this.hostname,
+                port: this.port,
+                password: this.password,
+                keyPrefix: this.prefix,
+                ready: true
+            });
+        }
+    }
+
+    /**
+     * Add listener for Redis events
+     * @param event
+     * @param listener
+     */
+    private addListener(event: string, listener: () => void) {
+        this.redis.on(event, listener);
+    }
+
+    /**
+     * Filter object properties by provided fields
+     * @param obj
+     * @param fields
+     */
+    private filterObject<T>(obj, fields): T {
+        const t: T = <T>{};
+        Object.keys(obj).map(k => {
+            if (fields.indexOf(k) > -1) {
+                t[k] = obj[k];
+            }
+        });
+        return t;
     }
 
 }
