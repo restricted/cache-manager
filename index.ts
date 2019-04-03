@@ -11,7 +11,7 @@ export interface Type<T> extends Function {
 /**
  * @class RedisDataCache
  * @description Redis backed data caching with partial find / update.
- * @version 0.0.4
+ * @version 0.0.5
  */
 export class RedisDataCache {
 
@@ -159,16 +159,13 @@ export class RedisDataCache {
         }
     }
 
+    /**
+     * Attach listener to any created object of class event
+     * @param type
+     * @param callback
+     */
     created<T>(type: Type<T>, callback: any) {
         this.eventEmmiter.on('Create_' + type.name, callback);
-    }
-
-    deleted<T>(type: Type<T>, callback: any) {
-        this.eventEmmiter.on('Delete_' + type.name, callback);
-    }
-
-    deletedById<T>(type: Type<T>, id: string | number, callback: any) {
-        this.eventEmmiter.on('Delete_' + type.name + '_' + id, callback);
     }
 
     /**
@@ -191,6 +188,25 @@ export class RedisDataCache {
     }
 
     /**
+     * Attach listener to any deleted object of class event
+     * @param type
+     * @param callback
+     */
+    deleted<T>(type: Type<T>, callback: any) {
+        this.eventEmmiter.on('Delete_' + type.name, callback);
+    }
+
+    /**
+     * Atach listener to deleted object of class by id event
+     * @param type
+     * @param id
+     * @param callback
+     */
+    deletedById<T>(type: Type<T>, id: string | number, callback: any) {
+        this.eventEmmiter.on('Delete_' + type.name + '_' + id, callback);
+    }
+
+    /**
      * Disconnect from Redis server
      */
     disconnect() {
@@ -200,6 +216,11 @@ export class RedisDataCache {
         return this.redis.disconnect();
     }
 
+    /**
+     * Check if object of provided class is exists by id
+     * @param type
+     * @param id
+     */
     async exists<T>(type: Type<T>, id: string | number) {
         if (this.debug) {
             console.info('STATE exists: ' + type.name + ' id: ' + id);
@@ -436,6 +457,15 @@ export class RedisDataCache {
     }
 
     /**
+     * Attach listener to EventEmmiter on update any
+     * @param type Class
+     * @param callback Function
+     */
+    updated<T>(type: Type<T>, callback: any) {
+        this.eventEmmiter.on('Update_' + type.name, callback);
+    }
+
+    /**
      * Attach listener to EventEmmiter on update by id
      * @param type Class
      * @param id Object id
@@ -443,15 +473,6 @@ export class RedisDataCache {
      */
     updatedById<T>(type: Type<T>, id: string | number, callback: any) {
         this.eventEmmiter.on('Update_' + type.name + '_' + id, callback);
-    }
-
-    /**
-     * Attach listener to EventEmmiter on update any
-     * @param type Class
-     * @param callback Function
-     */
-    updated<T>(type: Type<T>, callback: any) {
-        this.eventEmmiter.on('Update_' + type.name, callback);
     }
 
     /**
