@@ -100,8 +100,14 @@ export class RedisDataCache {
      */
     async connect(): Promise<any> {
         if (['connect', 'connecting', 'connected', 'ready'].indexOf(this.status()) === -1) {
+            if (this.debug) {
+                console.info('STATE Redis connect.');
+            }
             return await this.redis.connect();
         } else {
+            if (this.debug) {
+                console.info('STATE Redis already connected.');
+            }
             return Promise.resolve();
         }
     }
