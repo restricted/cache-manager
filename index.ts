@@ -1,4 +1,5 @@
 import * as Ioredis from 'ioredis';
+import * as EventEmitter from 'events';
 
 /**
  * @description Interface for type checking
@@ -18,6 +19,10 @@ export class RedisDataCache {
      * Debug
      */
     private debug = true;
+    /**
+     * Local event emmiter for events
+     */
+    private eventEmmiter: EventEmitter = new EventEmitter();
     /**
      * Redis connection host
      */
@@ -52,6 +57,7 @@ export class RedisDataCache {
      * @param options
      */
     constructor(options?: { url?: string, hostname?: string, port?: number, password?: string, prefix?: string, debug?: boolean }) {
+        this.eventEmmiter.setMaxListeners(10000);
         if (options) {
             Object.keys(options).map(key => {
                 this[key] = options[key];
@@ -67,15 +73,26 @@ export class RedisDataCache {
         try {
             const keys = await this.redis.keys(this.prefix + '*');
             if (keys.length === 0) {
+                this.eventEmmiter.emit('Clear');
                 return Promise.resolve(null);
             } else {
-                return Promise.all(await keys.map(async key => {
+                await Promise.all(await keys.map(async key => {
                     return this.redis.del(key.substr(this.prefix.length));
                 }));
+                this.eventEmmiter.emit('Clear');
+                return true;
             }
         } catch (e) {
             return Promise.reject(e);
         }
+    }
+
+    /**
+     * Attach event listener for 'Clear' method
+     * @param callback Function
+     */
+    cleared(callback: any) {
+        this.eventEmmiter.on('Clear', callback);
     }
 
     /**
@@ -101,9 +118,10 @@ export class RedisDataCache {
             console.info('STATE CREATE: ' + (className) + ' id: ' + data[this.idField]);
             console.debug(data);
         }
-
         try {
-            return await this.redis.set(className + '_' + data[this.idField], JSON.stringify(data));
+            const created = await this.redis.set(className + '_' + data[this.idField], JSON.stringify(data));
+            this.eventEmmiter.emit('Create_' + className, data);
+            return Promise.resolve(created);
         } catch (e) {
             return Promise.reject(new Error(e));
         }
@@ -125,7 +143,7 @@ export class RedisDataCache {
                 }
 
                 try {
-                    return await this.redis.set(className + '_' + d[this.idField], JSON.stringify(d));
+                    return await this.create(d);
                 } catch (e) {
                     return Promise.reject(new Error(e));
                 }
@@ -135,17 +153,35 @@ export class RedisDataCache {
         }
     }
 
+    created<T>(type: Type<T>, callback: any) {
+        this.eventEmmiter.on('Create_' + type.name, callback);
+    }
+
+    deleted<T>(type: Type<T>, callback: any) {
+        this.eventEmmiter.on('Delete_' + type.name, callback);
+    }
+
+    deletedById<T>(type: Type<T>, id: string | number, callback: any) {
+        this.eventEmmiter.on('Delete_' + type.name + '_' + id, callback);
+    }
+
     /**
      * Delete object from Redis
      * @param type Class
      * @param id Instance id
      */
-    delete<T>(type: Type<T>, id: string | number) {
+    async delete<T>(type: Type<T>, id: string | number): Promise<any> {
         if (this.debug) {
             console.info('STATE delete: ' + type.name + ' id: ' + id);
         }
-
-        return this.redis.del(type.name + '_' + id);
+        try {
+            await this.redis.del(type.name + '_' + id);
+            this.eventEmmiter.emit('Delete_' + type.name, id);
+            this.eventEmmiter.emit('Delete_' + type.name + '_' + id, id);
+            return Promise.resolve();
+        } catch (e) {
+            return Promise.reject(e);
+        }
     }
 
     /**
@@ -366,10 +402,18 @@ export class RedisDataCache {
      * @param data Instance of class
      */
     async update<T>(data: T): Promise<string> {
+        let className = data.constructor.name;
         if (this.debug) {
-            console.info('STATE update: ' + data.constructor.name + ' id: ' + data[this.idField]);
+            console.info('STATE update: ' + className + ' id: ' + data[this.idField]);
         }
-        return this.create(data);
+        try {
+            const updated = await this.redis.set(className + '_' + data[this.idField], JSON.stringify(data));
+            this.eventEmmiter.emit('Update_' + className + '_' + data[this.idField], data);
+            this.eventEmmiter.emit('Update_' + className, data);
+            return Promise.resolve(updated);
+        } catch (e) {
+            return Promise.reject(new Error(e));
+        }
     }
 
     /**
@@ -382,7 +426,26 @@ export class RedisDataCache {
             console.info('STATE partial update: ' + type.name + ' id: ' + data[this.idField]);
         }
         let find: T = await this.findById<T>(type, data[this.idField]);
-        return this.create(Object.assign(find, data));
+        return this.update(Object.assign(find, data));
+    }
+
+    /**
+     * Attach listener to EventEmmiter on update by id
+     * @param type Class
+     * @param id Object id
+     * @param callback Function
+     */
+    updatedById<T>(type: Type<T>, id: string | number, callback: any) {
+        this.eventEmmiter.on('Update_' + type.name + '_' + id, callback);
+    }
+
+    /**
+     * Attach listener to EventEmmiter on update any
+     * @param type Class
+     * @param callback Function
+     */
+    updated<T>(type: Type<T>, callback: any) {
+        this.eventEmmiter.on('Update_' + type.name, callback);
     }
 
     /**
