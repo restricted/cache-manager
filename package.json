@@ -19,16 +19,16 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^11.9.5"
+    "@types/node": "^11.9.5",
+    "ioredis": "^4.6.2",
+    "typescript": "3.1.6"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
     "chai": "^4.2.0",
-    "ioredis": "^4.6.2",
     "mocha": "^6.0.2",
     "nyc": "^13.3.0",
-    "ts-node": "^8.0.2",
-    "typescript": "3.0.3"
+    "ts-node": "^8.0.2"
   }
 }
