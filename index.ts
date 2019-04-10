@@ -11,7 +11,7 @@ export interface Type<T> extends Function {
 /**
  * @class RedisDataCache
  * @description Redis backed data caching with partial find / update.
- * @version 0.0.5
+ * @version 0.0.6
  */
 export class RedisDataCache {
 
@@ -234,7 +234,7 @@ export class RedisDataCache {
      * @param type Class
      * @param fields (optional) array of fetched fields
      */
-    async find<T>(type: Type<T>, fields?: string[]): Promise<any> {
+    async find<T>(type: Type<T>, fields?: string[]): Promise<T[]> {
         let classname = type.name;
 
         if (!classname) {
@@ -308,7 +308,7 @@ export class RedisDataCache {
      * @param ids Array of object ids
      * @param fields (optional) array of fetched fields
      */
-    async findByIds<T>(type: Type<T>, ids: any[], fields?: string[]) {
+    async findByIds<T>(type: Type<T>, ids: any[], fields?: string[]): Promise<T[]> {
 
         let classname = type.name;
 
